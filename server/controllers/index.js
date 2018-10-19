@@ -2,6 +2,7 @@
 const models = require('../models');
 
 const Cat = models.Cat.CatModel;
+const Dog = models.Dog.DogModel;
 
 // default fake data so that we have something to work with until we make a real Cat
 const defaultData = {
@@ -124,15 +125,95 @@ const notFound = (req, res) => {
   });
 };
 
+
+// //My stuff
+// create dog
+const createDog = (req, res) => {
+  console.log(req.body.dogName);
+  if (!req.body.dogName || !req.body.dogBreed || !req.body.dogAge) {
+    return res.status(400).json({ error: 'name, breed and age are all required' });
+  }
+
+  // dummy JSON to insert into database
+  const dogData = {
+    name: req.body.dogName,
+    breed: req.body.dogBreed,
+    age: req.body.dogAge,
+  };
+
+  const newDog = new Dog(dogData);
+
+  const savePromise = newDog.save();
+
+  savePromise.then(() => {
+    lastAdded = newDog;
+    res.json({ name: lastAdded.name, beds: lastAdded.breed, age: lastAdded.age });
+  });
+
+  savePromise.catch(err => res.json({ err }));
+
+  return res;
+};
+
+// search for dog
+const searchDogName = (req, res) => {
+  if (!req.query.dogName) {
+    return res.json({ error: 'Name is required to perform a search' });
+  }
+
+  return Dog.findByName(req.query.dogName, (err, doc) => {
+    if (err) {
+      return res.json({ err }); // if error, return it
+    }
+
+    if (!doc) {
+      return res.json({ error: 'No dogs found' });
+    }
+
+    const dog = doc;
+    dog.age++;
+
+    const savePromise = dog.save();
+
+    savePromise.then(() => res.json({ name: dog.name, age: dog.age }));
+
+    savePromise.catch(saveErr => res.json({ saveErr }));
+
+    return res;
+  });
+};
+
+// Return all dogs & values
+const readAllDogs = (req, res, callback) => {
+  Dog.find(callback);
+};
+
+// Create page 4
+const hostPage4 = (req, res) => {
+  const callback = (err, docs) => {
+    if (err) {
+      return res.json({ err }); // if error, return it
+    }
+
+    return res.render('page4', { dogs: docs });
+  };
+
+  readAllDogs(req, res, callback);
+};
+
+
 module.exports = {
   index: hostIndex,
   page1: hostPage1,
   page2: hostPage2,
   page3: hostPage3,
+  page4: hostPage4,
   readCat,
   getName,
   setName,
   updateLast,
   searchName,
   notFound,
+  createDog,
+  searchDogName,
 };
